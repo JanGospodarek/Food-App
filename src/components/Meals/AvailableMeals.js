@@ -1,6 +1,7 @@
 import Card from "../UI/Card";
 import styles from "./AvailableMeals.module.css";
 import MealItem from "./MealItem/MealItem";
+import { useEffect, useState } from "react";
 const DUMMY_MEALS = [
   {
     id: "m1",
@@ -29,7 +30,46 @@ const DUMMY_MEALS = [
 ];
 
 function AvailableMeals() {
-  const mealsList = DUMMY_MEALS.map((meal) => (
+  const [meals, setMeals] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [httpError, setHttpError] = useState(null);
+  useEffect(() => {
+    const fetchMeals = async () => {
+      setIsLoading(true);
+      const res = await fetch(
+        "https://gowno-b3287-default-rtdb.firebaseio.com/meals.json"
+      );
+      if (!res.ok) throw new Error("Something went wrong!");
+      const data = await res.json();
+      const loadedMeals = [];
+      for (const key in data) {
+        loadedMeals.push({
+          id: key,
+          name: data[key].price.name,
+          description: data[key].description,
+          price: data[key].price,
+        });
+      }
+      setMeals(loadedMeals);
+      setIsLoading(false);
+    };
+
+    fetchMeals().catch((err) => {
+      setIsLoading(false);
+      setHttpError(err.message);
+    });
+  }, []);
+  if (isLoading) {
+    return (
+      <section className={styles.MealsLoading}>
+        <p>Loading</p>
+      </section>
+    );
+  }
+  if (httpError) {
+    return <section className={styles.MealsError}>Failed to fetch</section>;
+  }
+  const mealsList = meals.map((meal) => (
     <MealItem
       key={meal.id}
       id={meal.id}
